@@ -1,0 +1,62 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# AI rules for stock portfolio project
+
+Celem tego projektu jest stworzenie aplikacji webowej w wersji Minimum Viable Product (MVP) służącej do śledzenia wartości osobistego portfela akcji. Aplikacja przeznaczona jest dla jednego użytkownika (Piotr Kowalczyk), który jest długoterminowym inwestorem i potrzebuje prostego narzędzia do monitorowania wartości swoich inwestycji w jednym miejscu, oszczędzając czas potrzebny na sprawdzanie wielu źródeł. MVP skupia się na podstawowych funkcjach śledzenia, obliczeniach wartości i zysku/straty, wizualizacji danych oraz automatycznych podsumowaniach wysyłanych e-mailem. Aplikacja będzie responsywna i wykorzysta zewnętrzne API do pobierania danych rynkowych oraz integrację z AI do generowania podsumowań
+
+## Tech stack
+
+### Frontend - Next.js:
+
+- React 19 zapewni interaktywność tam, gdzie jest potrzebna
+- TypeScript 5 dla statycznego typowania kodu i lepszego wsparcia IDE
+- Tailwind 4 pozwala na wygodne stylowanie aplikacji
+- Shadcn/ui zapewnia bibliotekę dostępnych komponentów React, na których oprzemy UI
+
+### Backend - Supabase jako kompleksowe rozwiązanie backendowe:
+
+- Zapewnia bazę danych PostgreSQL
+- Zapewnia SDK w wielu językach, które posłużą jako Backend-as-a-Service
+- Jest rozwiązaniem open source, które można hostować lokalnie lub na własnym serwerze
+- Posiada wbudowaną autentykację użytkowników
+
+### AI - Komunikacja z modelami przez usługę Openrouter.ai:
+
+- Dostęp do szerokiej gamy modeli (OpenAI, Anthropic, Google i wiele innych), które pozwolą nam znaleźć rozwiązanie zapewniające wysoką efektywność i niskie koszta
+- Pozwala na ustawianie limitów finansowych na klucze API
+
+### CI/CD i Hosting:
+
+- Github Actions do tworzenia pipeline’ów CI/CD
+- DigitalOcean do hostowania aplikacji za pośrednictwem obrazu docker
+
+## CODING_PRACTICES
+
+### Guidelines for SUPPORT_LEVEL
+
+#### SUPPORT_BEGINNER
+
+- When running in agent mode, execute up to 3 actions at a time and ask for approval or course correction afterwards.
+- Write code with clear variable names and include explanatory comments for non-obvious logic. Avoid shorthand syntax and complex patterns.
+- Provide full implementations rather than partial snippets. Include import statements, required dependencies, and initialization code.
+- Add defensive coding patterns and clear error handling. Include validation for user inputs and explicit type checking.
+- Suggest simpler solutions first, then offer more optimized versions with explanations of the trade-offs.
+- Briefly explain why certain approaches are used and link to relevant documentation or learning resources.
+- When suggesting fixes for errors, explain the root cause and how the solution addresses it to build understanding. Ask for confirmation before proceeding.
+- Offer introducing basic test cases that demonstrate how the code works and common edge cases to consider.
+
+### Guidelines for VERSION_CONTROL
+
+#### GIT
+
+- Use conventional commits to create meaningful commit messages
+- Use feature branches with descriptive names following {{branch_naming_convention}}
+- Write meaningful commit messages that explain why changes were made, not just what
+- Keep commits focused on single logical changes to facilitate code review and bisection
+- Use interactive rebase to clean up history before merging feature branches
+- Leverage git hooks to enforce code quality checks before commits and pushes
+
+
