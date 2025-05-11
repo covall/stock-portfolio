@@ -1,3 +1,5 @@
+# Tech Stack
+
 Frontend - Next.js:
 
 - React 19 zapewni interaktywność tam, gdzie jest potrzebna
@@ -19,5 +21,5 @@ AI - Komunikacja z modelami przez usługę Openrouter.ai:
 
 CI/CD i Hosting:
 
-- Github Actions do tworzenia pipeline’ów CI/CD
+- Github Actions do tworzenia pipeline'ów CI/CD
 - DigitalOcean do hostowania aplikacji za pośrednictwem obrazu docker
