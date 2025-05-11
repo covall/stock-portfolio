@@ -1,0 +1,57 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Supabase Next.js Initialization
+
+This document provides a reproducible guide to create the necessary file structure for integrating Supabase with your Astro project.
+
+## Prerequisites
+
+- Your project should use Next.js 15, TypeScript 5, React 19, and Tailwind 4.
+- Install the `@supabase/supabase-js` package.
+- Ensure that `/supabase/config.toml` exists
+- Ensure that a file `/db/database.types.ts` exists and contains the correct type definitions for your database.
+
+IMPORTANT: Check prerequisites before perfoming actions below. If they're not met, stop and ask a user for the fix.
+
+## File Structure and Setup
+
+### 1. Supabase Client Initialization
+
+Create the file `/utlis/supabase/server.ts` with the following content:
+
+```ts
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  )
+}
+```
+
+This file initializes the Supabase client using the environment variables `SUPABASE_URL` and `SUPABASE_KEY`.
