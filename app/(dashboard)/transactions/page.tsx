@@ -1,10 +1,11 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { deleteTransaction } from './actions';
 
 export default async function TransactionsPage() {
   const supabase = await createClient();
 
-  // Fetch all transactions
   const { data: transactions, error } = await supabase
     .from('transactions')
     .select('*')
@@ -18,12 +19,9 @@ export default async function TransactionsPage() {
     <div className='container mx-auto py-8 px-4'>
       <div className='flex justify-between items-center mb-6'>
         <h1 className='text-2xl font-bold'>Transactions</h1>
-        <Link
-          href='/'
-          className='px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors'
-        >
-          Back to Dashboard
-        </Link>
+        <Button asChild>
+          <Link href='/transactions/new'>Add Transaction</Link>
+        </Button>
       </div>
 
       {error ? (
@@ -42,6 +40,7 @@ export default async function TransactionsPage() {
                 <th className='text-right py-3 px-4 font-semibold'>Price</th>
                 <th className='text-right py-3 px-4 font-semibold'>Total</th>
                 <th className='text-left py-3 px-4 font-semibold'>Currency</th>
+                <th className='py-3 px-4'></th>
               </tr>
             </thead>
             <tbody className='divide-y divide-gray-200'>
@@ -69,6 +68,23 @@ export default async function TransactionsPage() {
                     <td className='py-3 px-4 text-right'>{transaction.price.toFixed(2)}</td>
                     <td className='py-3 px-4 text-right font-medium'>{total.toFixed(2)}</td>
                     <td className='py-3 px-4'>{transaction.currency}</td>
+                    <td className='py-3 px-4'>
+                      <div className='flex items-center gap-2 justify-end'>
+                        <Button asChild variant='outline' size='sm'>
+                          <Link href={`/transactions/${transaction.id}/edit`}>Edit</Link>
+                        </Button>
+                        <form action={deleteTransaction.bind(null, transaction.id)}>
+                          <Button
+                            type='submit'
+                            variant='outline'
+                            size='sm'
+                            className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                          >
+                            Delete
+                          </Button>
+                        </form>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -76,8 +92,11 @@ export default async function TransactionsPage() {
           </table>
         </div>
       ) : (
-        <div className='bg-gray-50 rounded-lg p-8 text-center text-gray-500'>
-          No transactions found
+        <div className='bg-gray-50 rounded-lg p-8 text-center'>
+          <p className='text-gray-500 mb-4'>No transactions found</p>
+          <Button asChild>
+            <Link href='/transactions/new'>Add your first transaction</Link>
+          </Button>
         </div>
       )}
     </div>
