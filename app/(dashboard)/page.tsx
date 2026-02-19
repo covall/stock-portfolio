@@ -4,11 +4,40 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchAndStoreExchangeRates, getLatestExchangeRates } from '@/lib/market-data/exchange-rates'
 import { fetchAndStoreStockPrices, getLatestStockPrices } from '@/lib/market-data/stock-prices'
+import {
+  fetchAndStoreDailyPrices,
+  getDailyPricesForSymbols,
+} from '@/lib/market-data/stock-price-history'
 import { computePositions, computeTotalValue, convertCurrency } from '@/lib/portfolio/calculations'
+import { computePortfolioHistory } from '@/lib/portfolio/history'
+import PortfolioChart from './_components/portfolio-chart'
 
 type DisplayCurrency = 'USD' | 'EUR' | 'PLN'
 const CURRENCIES: DisplayCurrency[] = ['USD', 'EUR', 'PLN']
 const CURRENCY_SYMBOLS: Record<DisplayCurrency, string> = { USD: '$', EUR: '€', PLN: 'zł' }
+
+type ChartRange = '1m' | '3m' | '6m' | 'ytd' | '1y' | 'max'
+const CHART_RANGES: ChartRange[] = ['1m', '3m', '6m', 'ytd', '1y', 'max']
+const CHART_RANGE_LABELS: Record<ChartRange, string> = {
+  '1m': '1M',
+  '3m': '3M',
+  '6m': '6M',
+  ytd: 'YTD',
+  '1y': '1Y',
+  max: 'Max',
+}
+
+function chartRangeDays(range: ChartRange): number {
+  if (range === 'ytd') {
+    const now = new Date()
+    return Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000)
+  }
+  return { '1m': 30, '3m': 90, '6m': 180, '1y': 365, max: 1825 }[range]
+}
+
+function isValidChartRange(v: string | undefined): v is ChartRange {
+  return v === '1m' || v === '3m' || v === '6m' || v === 'ytd' || v === '1y' || v === 'max'
+}
 
 function fmt(n: number, currency: DisplayCurrency): string {
   const symbol = CURRENCY_SYMBOLS[currency]
@@ -25,12 +54,14 @@ const FX_DISPLAY_PAIRS: [string, string][] = [
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ currency?: string }>
+  searchParams: Promise<{ currency?: string; chart?: string }>
 }) {
   const params = await searchParams
   const rawCurrency = params.currency?.toUpperCase()
   const displayCurrency: DisplayCurrency =
     rawCurrency === 'EUR' || rawCurrency === 'PLN' ? rawCurrency : 'USD'
+
+  const chartRange: ChartRange = isValidChartRange(params.chart) ? params.chart : '3m'
 
   const supabase = await createClient()
   const {
@@ -42,7 +73,7 @@ export default async function DashboardPage({
   const [{ data: transactions }, { data: cashRows }] = await Promise.all([
     supabase
       .from('transactions')
-      .select('stock_symbol, transaction_type, quantity, price, currency')
+      .select('stock_symbol, transaction_type, quantity, price, currency, transaction_date')
       .eq('user_id', user.id),
     supabase.from('cash_balances').select('currency, balance').eq('user_id', user.id),
   ])
@@ -86,12 +117,16 @@ export default async function DashboardPage({
   const [ratesRefreshed, pricesRefreshed] = await Promise.all([
     fetchAndStoreExchangeRates(supabase),
     fetchAndStoreStockPrices(supabase, symbols),
+    ...symbols.map((s) => fetchAndStoreDailyPrices(supabase, s)),
   ])
 
-  const [{ rates, timestamp: ratesTimestamp }, stockPrices] = await Promise.all([
-    getLatestExchangeRates(supabase),
-    getLatestStockPrices(supabase, symbols),
-  ])
+  const [{ rates, timestamp: ratesTimestamp }, stockPrices, symbolDailyPrices] = await Promise.all(
+    [
+      getLatestExchangeRates(supabase),
+      getLatestStockPrices(supabase, symbols),
+      getDailyPricesForSymbols(supabase, symbols, chartRangeDays(chartRange)),
+    ]
+  )
 
   const staleRates = !ratesRefreshed
   const stalePrices =
@@ -99,6 +134,21 @@ export default async function DashboardPage({
     (!pricesRefreshed || Object.values(stockPrices).some((p) => p === null))
 
   const positions = computePositions(txList, stockPrices, rates)
+
+  const portfolioHistory = computePortfolioHistory(
+    txList.map((t) => ({
+      stock_symbol: t.stock_symbol,
+      transaction_type: t.transaction_type as 'buy' | 'sell',
+      quantity: Number(t.quantity),
+      price: Number(t.price),
+      currency: t.currency,
+      transaction_date: t.transaction_date,
+    })),
+    symbolDailyPrices,
+    rates,
+    displayCurrency,
+    cashBalances
+  )
   const totalValue = computeTotalValue(positions, cashBalances, displayCurrency, rates)
 
   const equityValue = positions.reduce((sum, p) => {
@@ -204,6 +254,45 @@ export default async function DashboardPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* Portfolio value chart */}
+      <Card className='mb-8'>
+        <CardHeader>
+          <div className='flex items-center justify-between flex-wrap gap-3'>
+            <CardTitle>Portfolio Value History ({displayCurrency})</CardTitle>
+            <div className='flex gap-1'>
+              {CHART_RANGES.map((r) => (
+                <a
+                  key={r}
+                  href={`/?currency=${displayCurrency}&chart=${r}`}
+                  className={`px-3 py-1 rounded text-sm font-medium border ${
+                    r === chartRange
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-foreground border-input hover:bg-accent'
+                  }`}
+                >
+                  {CHART_RANGE_LABELS[r]}
+                </a>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {portfolioHistory.length > 0 ? (
+            <PortfolioChart
+              data={portfolioHistory}
+              currencySymbol={CURRENCY_SYMBOLS[displayCurrency]}
+              currency={displayCurrency}
+            />
+          ) : (
+            <div className='flex h-64 items-center justify-center text-gray-400 text-sm text-center px-4'>
+              No price history available yet.
+              <br />
+              Visit a stock&apos;s detail page to load its price history.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Exchange rates */}
       <section className='mb-8'>
