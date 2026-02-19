@@ -264,7 +264,9 @@ export default async function DashboardPage({
                   return (
                     <tr key={pos.symbol} className='hover:bg-gray-50'>
                       <td className='py-3 px-4 font-medium'>
-                        <div>{pos.symbol}</div>
+                        <Link href={`/stocks/${pos.symbol}`} className='hover:underline text-blue-600'>
+                          {pos.symbol}
+                        </Link>
                         {pos.priceTimestamp && (
                           <div className='text-xs text-gray-400'>
                             price:{' '}

@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type StockPriceMap = Record<string, { price: number; timestamp: string } | null>
 
+const STALENESS_MS = 15 * 60 * 1000 // 15 minutes
+
 export async function fetchAndStoreStockPrices(
   supabase: SupabaseClient,
   symbols: string[]
@@ -11,9 +13,22 @@ export async function fetchAndStoreStockPrices(
   const apiKey = process.env.ALPHA_VANTAGE_API_KEY
   if (!apiKey) return false
 
+  // Only fetch symbols that have no price newer than STALENESS_MS
+  const since = new Date(Date.now() - STALENESS_MS).toISOString()
+  const { data: recentRows } = await supabase
+    .from('stock_prices')
+    .select('stock_symbol')
+    .in('stock_symbol', symbols)
+    .gte('timestamp', since)
+
+  const alreadyFresh = new Set((recentRows ?? []).map((r) => r.stock_symbol))
+  const staleSymbols = symbols.filter((s) => !alreadyFresh.has(s))
+
+  if (staleSymbols.length === 0) return true
+
   let allSucceeded = true
 
-  for (const symbol of symbols) {
+  for (const symbol of staleSymbols) {
     try {
       const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`
       const res = await fetch(url)
