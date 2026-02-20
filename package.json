@@ -8,9 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "email:test": "supabase functions invoke send-portfolio-summary --body '{\"type\":\"daily\"}'",
-    "email:test:weekly": "supabase functions invoke send-portfolio-summary --body '{\"type\":\"weekly\"}'",
-    "email:test:monthly": "supabase functions invoke send-portfolio-summary --body '{\"type\":\"monthly\"}'"
+    "email:test": "curl -s -X POST http://localhost:54321/functions/v1/send-portfolio-summary -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' -d '{\"type\":\"daily\"}' | cat",
+    "email:test:weekly": "curl -s -X POST http://localhost:54321/functions/v1/send-portfolio-summary -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' -d '{\"type\":\"weekly\"}' | cat",
+    "email:test:monthly": "curl -s -X POST http://localhost:54321/functions/v1/send-portfolio-summary -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' -d '{\"type\":\"monthly\"}' | cat"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
