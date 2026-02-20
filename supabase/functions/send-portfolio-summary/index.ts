@@ -109,6 +109,9 @@ Deno.serve(async (req) => {
   )
 
   // --- Get all users ---
+  // EMAIL_TO override: useful on Resend free tier (can only send to verified address)
+  const emailOverride = Deno.env.get('EMAIL_TO')
+
   const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers()
   if (usersError || !usersData) {
     return new Response(JSON.stringify({ error: 'Failed to list users' }), { status: 500 })
@@ -119,7 +122,8 @@ Deno.serve(async (req) => {
 
   for (const user of users) {
     try {
-      await processUser(supabase, user.id, user.email!, summaryType, periodDays, periodLabel, today, periodStartDate)
+      const recipientEmail = emailOverride ?? user.email!
+      await processUser(supabase, user.id, recipientEmail, summaryType, periodDays, periodLabel, today, periodStartDate)
       processed++
     } catch (err) {
       console.error(`Failed to process user ${user.id}:`, err)
