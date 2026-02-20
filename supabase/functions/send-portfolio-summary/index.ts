@@ -120,15 +120,21 @@ Deno.serve(async (req) => {
   const users = usersData.users.filter((u) => u.email)
   let processed = 0
 
+  console.log(`[${summaryType}] Processing ${users.length} user(s)…`)
+
   for (const user of users) {
     try {
       const recipientEmail = emailOverride ?? user.email!
+      console.log(`[${summaryType}] user=${user.id} → ${recipientEmail}`)
       await processUser(supabase, user.id, recipientEmail, summaryType, periodDays, periodLabel, today, periodStartDate)
+      console.log(`[${summaryType}] ✓ Email sent to ${recipientEmail}`)
       processed++
     } catch (err) {
-      console.error(`Failed to process user ${user.id}:`, err)
+      console.error(`[${summaryType}] ✗ Failed for user ${user.id}:`, err)
     }
   }
+
+  console.log(`[${summaryType}] Done — ${processed}/${users.length} sent.`)
 
   return new Response(
     JSON.stringify({ success: true, usersProcessed: processed, type: summaryType }),
@@ -311,6 +317,7 @@ Write 150-200 words. Be factual, professional, and concise. Start with a subject
 
   const aiJson = await aiRes.json()
   const rawText: string = aiJson.choices?.[0]?.message?.content ?? ''
+  console.log(`  AI response received (${rawText.length} chars)`)
 
   // Parse Subject line from first line
   const lines = rawText.trim().split('\n')
@@ -342,6 +349,8 @@ Write 150-200 words. Be factual, professional, and concise. Start with a subject
   })
 
   if (!emailRes.ok) {
-    console.error('Resend error:', await emailRes.text())
+    console.error('  Resend error:', await emailRes.text())
+  } else {
+    console.log(`  Resend accepted — subject: "${subject}"`)
   }
 }
